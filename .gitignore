@@ -5,7 +5,10 @@ __pycache__/
 .DS_STORE
 
 # Secrets
-secrets/
+secrets
+
+# Nose
+.noseids
 
 # Scripts
 *.sh
