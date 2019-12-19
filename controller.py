@@ -35,10 +35,23 @@ class Controller():
         self.mongo_controller = MongoController(mongo_connection_string, mongo_db_name)
 
     def __process_crawl(self, crawl):
+        """
+        Process a crawl result
+
+        :param CrawlResult crawl: The to be processed crawl result
+        """
         score, _, _ = self.processor.process(crawl.text, crawl.keyword_string)
 
         if score:
             self.mongo_controller.set_score_crawl(crawl._id, score)
+
+    def run_single_crawl(self, crawl):
+        """
+        Process a single input crawl
+
+        :param CrawlResult crawl: The to be processed crawl result
+        """
+        self.__process_crawl(crawl)
     
     def run_full(self):
         """
