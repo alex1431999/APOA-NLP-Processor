@@ -7,6 +7,7 @@ import os
 from celery import Celery
 from common.utils.logging import DEFAULT_LOGGER, LogTypes
 from common.mongo.data_types.crawling.crawl_result import CrawlResult
+from common.celery import queues
 
 from controller import Controller
 
@@ -16,7 +17,7 @@ app = Celery('tasks',
 
 controller = Controller()
 
-@app.task(name='process-crawl')
+@app.task(name='process-crawl', queue=queues['processor'])
 def process_crawl(crawl_dict):
     """
     Process a single crawl result
