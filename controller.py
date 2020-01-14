@@ -43,7 +43,8 @@ class Controller():
         score, _, _ = self.processor.process(crawl.text, crawl.keyword_string)
 
         if score:
-            self.mongo_controller.set_score_crawl(crawl._id, score)
+            return self.mongo_controller.set_score_crawl(crawl._id, score)
+        return None
 
     def run_single_crawl(self, crawl):
         """
@@ -51,7 +52,7 @@ class Controller():
 
         :param CrawlResult crawl: The to be processed crawl result
         """
-        self.__process_crawl(crawl)
+        return self.__process_crawl(crawl)
     
     def run_full(self):
         """
