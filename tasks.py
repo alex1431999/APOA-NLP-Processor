@@ -31,3 +31,4 @@ def process_crawl(crawl_dict):
         return None
 
     DEFAULT_LOGGER.log('Received processing reqeust for {} ({})'.format(crawl.keyword_string, crawl.language), log_type=LogTypes.INFO.value)
+    controller.run_single_crawl(crawl)
