@@ -14,6 +14,7 @@ from threading import Thread
 
 from common.mongo.data_types.keyword import Keyword
 from common.mongo.controller import MongoController
+from common.neo4j.controller import Neo4jController
 from common.utils.logging import DEFAULT_LOGGER, LogTypes
 
 from processor import GoogleCloudLanguageProcessor
@@ -28,11 +29,18 @@ class Controller():
         """
         self.MAX_REQUESTS_PER_MIN = 600 / 3 # 600 requests per minute, each process sends 3 requests
 
+        # Mongo
         mongo_connection_string = os.environ['MONGO_CONNECTION_STRING']
         mongo_db_name = os.environ['MONGO_DB_NAME']
 
+        # Neo4J
+        neo_connection_string = os.environ['NEO_CONNECTION_STRING']
+        neo_user = os.environ['NEO_USER']
+        neo_password = os.environ['NEO_PASSWORD']
+
         self.processor = GoogleCloudLanguageProcessor()
         self.mongo_controller = MongoController(mongo_connection_string, mongo_db_name)
+        self.neo_controller = Neo4jController(neo_connection_string, neo_user, neo_password)
 
     def __process_crawl(self, crawl):
         """
@@ -40,7 +48,17 @@ class Controller():
 
         :param CrawlResult crawl: The to be processed crawl result
         """
-        score, _, _ = self.processor.process(crawl.text, crawl.keyword_string)
+        keyword = self.mongo_controller.get_keyword_by_id(crawl.keyword_ref, cast=True)
+
+        score, entities, categories = self.processor.process(crawl.text, crawl.keyword_string)
+
+        self.neo_controller.add_keyword(keyword)
+
+        for entity in entities:
+            self.neo_controller.add_entity(entity, keyword.language, 1, keyword._id)
+
+        for category in categories:
+            self.neo_controller.add_category(category, keyword.language, 1, keyword._id)
 
         if score:
             return self.mongo_controller.set_score_crawl(crawl._id, score)
