@@ -9,20 +9,20 @@ from common.utils.logging import DEFAULT_LOGGER, LogTypes
 from common.mongo.data_types.crawling.crawl_result import CrawlResult
 from common.celery import queues
 
-from controller import Controller
+from helpers.decorators import inject_controller
 
 app = Celery('tasks',
     broker = os.environ['BROKER_URL']
 )
 
-controller = Controller()
-
 @app.task(name='process-crawl', queue=queues['processor'])
-def process_crawl(crawl_dict):
+@inject_controller
+def process_crawl(crawl_dict, controller=None):
     """
     Process a single crawl result
 
     :param dict crawl_dict: The dictonary of the crawl result
+    :param Controller controller: The controller is injected by @inject_controller
     """
     crawl = CrawlResult.from_dict(crawl_dict)
 
