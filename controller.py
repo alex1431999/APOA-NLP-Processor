@@ -55,10 +55,10 @@ class Controller():
         self.neo_controller.add_keyword(keyword)
 
         for entity in entities:
-            self.neo_controller.add_entity(entity, keyword.language, 1, keyword._id)
+            self.neo_controller.add_entity(entity.name, keyword.language, entity.sentiment.score, 1, keyword._id)
 
         for category in categories:
-            self.neo_controller.add_category(category, keyword.language, 1, keyword._id)
+            self.neo_controller.add_category(category.name, keyword.language, category.confidence, 1, keyword._id)
 
         if score:
             return self.mongo_controller.set_score_crawl(crawl._id, score)
