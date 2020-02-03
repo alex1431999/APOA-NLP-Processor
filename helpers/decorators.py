@@ -14,8 +14,10 @@ def inject_controller(func):
     def inject(*args, **kwargs):
         controller = Controller()
 
-        func(*args, **kwargs, controller=controller)
+        result = func(*args, **kwargs, controller=controller)
 
-        return controller.neo_controller.session.close()
+        controller.neo_controller.session.close()
+
+        return result
     return inject
         
