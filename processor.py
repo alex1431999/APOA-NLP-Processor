@@ -23,8 +23,6 @@ class GoogleCloudLanguageProcessor:
         """
         Establish a connection to the Google Cloud Language API Server
         """
-        self.ENTITY_MULTIPLIER = 2
-
         self.client = language.LanguageServiceClient()
         DEFAULT_LOGGER.log('Connected to Google Cloud Language API', log_type=LogTypes.INFO.value)
 
@@ -67,19 +65,9 @@ class GoogleCloudLanguageProcessor:
             DEFAULT_LOGGER.log('Failed to get categories for {}'.format(keyword_string), LogTypes.ERROR.value, ex)
             categories = []
 
-        match = None
-        for entity in entities:
-            if (entity.name.upper() == keyword_string.upper()):
-                match = entity
-
         try: # Since document_sentiment might be None we need another check here
             score = document_sentiment.score # By default take the general text setiment score
         except:
             score = None
-
-        if (match): # But if we have a match, take the matched sentiment with a multiplier
-            # Multiply the sentiment score by the Entity multipler for bonus
-            # points for being an exact match
-            score = match.sentiment.score * self.ENTITY_MULTIPLIER
         
         return (score, entities, categories)
