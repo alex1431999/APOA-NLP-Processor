@@ -17,7 +17,8 @@ class GoogleCloudLanguageProcessor:
     """
 
     # Class attributes
-    entity_types = read_json('./config/entity_types.json') 
+    entity_types = read_json('./config/entity_types.json')
+    entity_blacklist = read_json('./config/entity_blacklist.json')
 
     def __init__(self):
         """
@@ -25,6 +26,40 @@ class GoogleCloudLanguageProcessor:
         """
         self.client = language.LanguageServiceClient()
         DEFAULT_LOGGER.log('Connected to Google Cloud Language API', log_type=LogTypes.INFO.value)
+
+    def entity_filter(self, entity, keyword_string):
+        """
+        A filter to check if an entity should be stored or not
+
+        :param Entity entity: The entity which is supposed to be chekced
+        :param str keyword_string: The keyword which was used to get the entity
+
+        :return: If you should remove the entity
+        :rtype: boolean
+        """
+        if entity.name.lower() == keyword_string.lower():
+            return True
+        
+        if entity.name.lower() in self.entity_blacklist:
+            return True
+
+        return False
+
+    def filter_entities(self, entities, keyword_string):
+        """
+        Execute `entity_filter` on each entity and remove all entities which don't pass the check
+
+        :param List<Entity> entities: The entities which is supposed to be chekced
+        :param str keyword_string: The keyword which was used to get the entity
+
+        :return: All entities which pass the filter check
+        :rtype: list
+        """
+        entities_filtered = []
+        for entity in entities:
+            if not self.entity_filter(entity, keyword_string):
+                entities_filtered.append(entity)
+        return entities_filtered
 
     def process(self, text, keyword_string):
         """
@@ -55,6 +90,7 @@ class GoogleCloudLanguageProcessor:
 
         try: # Get all entities of the text
             entities = self.client.analyze_entity_sentiment(document=document).entities
+            entities = self.filter_entities(entities, keyword_string)
         except Exception as ex: # If it fails make entities an empty list
             DEFAULT_LOGGER.log('Failed to get entities of {}'.format(keyword_string), LogTypes.ERROR.value, ex)
             entities = []
