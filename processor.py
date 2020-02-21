@@ -43,6 +43,9 @@ class GoogleCloudLanguageProcessor:
         if entity.name.lower() in self.entity_blacklist:
             return True
 
+        if len(entity.name) == 1:
+            return True
+
         return False
 
     def filter_entities(self, entities, keyword_string):
