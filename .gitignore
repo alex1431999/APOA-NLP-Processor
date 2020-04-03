@@ -3,6 +3,7 @@ venv/
 .vscode
 __pycache__/
 .DS_STORE
+*.pyc
 
 # Secrets
 secrets
