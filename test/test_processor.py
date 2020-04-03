@@ -17,6 +17,13 @@ class GoogleCloudClientMock():
     def __init__(self):
         pass
 
+class Entity():
+    """
+    This class is a simplified version of the entity class used by the google library
+    """
+    def __init__(self, name):
+        self.name = name
+
 class TestGoogleCloudLanguageProcessor(unittest.TestCase):
     """
     Testing Setup
@@ -41,3 +48,33 @@ class TestGoogleCloudLanguageProcessor(unittest.TestCase):
     def test_api_connection(self):
         client = self.processor.client
         self.assertIsNotNone(client)
+
+    def test_entity_filter_passing(self):
+        entity = Entity('test')
+        self.processor.entity_blacklist = [] # Remove any potentially blacklisted entities
+
+        result = self.processor.entity_filter(entity, 'keyword')
+        self.assertFalse(result, 'Entity should have not been filtered')
+
+    def test_entity_filter_name(self):
+        name = 'some name'
+        entity = Entity(name)
+        self.processor.entity_blacklist = [] # Remove any potentially blacklisted entities
+
+        result = self.processor.entity_filter(entity, name)
+        self.assertTrue(result, 'Entity should have been filtered')
+
+    def test_entity_filter_blacklist(self):
+        entity_blacklisted = Entity('test')
+        self.processor.entity_blacklist = [entity_blacklisted.name]
+
+        result = self.processor.entity_filter(entity_blacklisted, 'keyword')
+        self.assertTrue(result, 'Entity should have been filtered')
+
+    def test_entity_filter_entity_length(self):
+        entity = Entity('t')
+        self.assertEqual(len(entity.name), 1, 'Make sure the entities name is of length 1')
+        self.processor.entity_blacklist = [] # Remove any potentially blacklisted entities
+
+        result = self.processor.entity_filter(entity, 'keyword')
+        self.assertTrue(result, 'Entity should have been filtered')
