@@ -142,7 +142,7 @@ class TestGoogleCloudLanguageProcessor(unittest.TestCase):
         result = self.processor.entity_filter(entity, 'keyword')
         self.assertTrue(result, 'Entity should have been filtered')
 
-    def test_process_pass(self):
+    def test_process_passing(self):
         result = self.processor.process('some text', 'keyword')
         self.assertIsNotNone(result, 'The function should have returned something')
 
