@@ -3,7 +3,7 @@ image: "python:3.7"
 services:
   - mongo:latest
   - rabbitmq:latest
-  - neo4j:lastest
+  - neo4j:3.5.12
 
 variables:
   PYTHON_ENV: 'DEVELOPMENT'
