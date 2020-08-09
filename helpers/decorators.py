@@ -16,8 +16,6 @@ def inject_controller(func):
 
         result = func(*args, **kwargs, controller=controller)
 
-        controller.neo_controller.session.close()
-
         return result
     return inject
         
