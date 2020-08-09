@@ -12,9 +12,7 @@ import time
 
 from threading import Thread
 
-from common.mongo.data_types.keyword import Keyword
 from common.mongo.controller import MongoController
-from common.neo4j.controller import Neo4jController
 from common.utils.logging import DEFAULT_LOGGER, LogTypes
 
 from processor import GoogleCloudLanguageProcessor
@@ -33,14 +31,8 @@ class Controller():
         mongo_connection_string = os.environ['MONGO_CONNECTION_STRING']
         mongo_db_name = os.environ['MONGO_DB_NAME']
 
-        # Neo4J
-        neo_connection_string = os.environ['NEO_CONNECTION_STRING']
-        neo_user = os.environ['NEO_USER']
-        neo_password = os.environ['NEO_PASSWORD']
-
         self.processor = GoogleCloudLanguageProcessor()
         self.mongo_controller = MongoController(mongo_connection_string, mongo_db_name)
-        self.neo_controller = Neo4jController(neo_connection_string, neo_user, neo_password)
 
     def __process_crawl(self, crawl):
         """
@@ -52,13 +44,34 @@ class Controller():
 
         score, entities, categories = self.processor.process(crawl.text, crawl.keyword_string)
 
-        self.neo_controller.add_keyword(keyword)
-
+        entities_formatted = []
         for entity in entities:
-            self.neo_controller.add_entity(entity.name, keyword.language, entity.sentiment.score, 1, keyword._id)
+            entity = {"value": entity.name, "score": entity.sentiment.score, "count": 1}
+            new_entity = True
 
+            for entity_already_included in entities_formatted:
+                if entity_already_included["value"] == entity["value"]:
+                    entity_already_included["count"] += entity["count"]
+                    new_entity = False
+
+            if new_entity:
+                entities_formatted.append(entity)
+
+        categories_formatted = []
         for category in categories:
-            self.neo_controller.add_category(category.name, keyword.language, category.confidence, 1, keyword._id)
+            category = {"value": category.name, "confidence": category.confidence, "count": 1}
+            new_category = True
+
+            for category_already_included in categories_formatted:
+                if category_already_included["value"] == category["value"]:
+                    category_already_included["count"] += category["count"]
+                    new_category = False
+
+            if new_category:
+                categories_formatted.append(category)
+
+        self.mongo_controller.set_entities_crawl(crawl._id, entities_formatted)
+        self.mongo_controller.set_categories_crawl(crawl._id, categories_formatted)
 
         if score:
             return self.mongo_controller.set_score_crawl(crawl._id, score)
