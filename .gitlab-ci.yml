@@ -3,16 +3,12 @@ image: "python:3.7"
 services:
   - mongo:latest
   - rabbitmq:latest
-  - neo4j:3.5.12
 
 variables:
   PYTHON_ENV: 'DEVELOPMENT'
   BROKER_URL: 'amqp://guest:guest@rabbitmq:5672'
   MONGO_URL: 'mongodb://mongo:27017'
   MONGO_DATABASE_NAME: 'ci_test'
-  NEO_CONNECTION_STRING: "bolt://neo4j:7687"
-  NEO_USER: "neo4j"
-  NEO_PASSWORD: "root"
 
 before_script:
   - python --version
