@@ -92,7 +92,6 @@ class GoogleCloudLanguageProcessor:
             if keyword_language in VADER_SUPPORTED_LANGUAGES:
                 if keyword_language == "de":
                     score = self.vader_analyzer_german.polarity_scores(text)["compound"]
-                    print(score)
                 else:
                     score = self.vader_analyzer.polarity_scores(text)["compound"]
             else:
