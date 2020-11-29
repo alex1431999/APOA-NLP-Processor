@@ -42,7 +42,7 @@ class Controller():
         """
         keyword = self.mongo_controller.get_keyword_by_id(crawl.keyword_ref, cast=True)
 
-        score, entities, categories = self.processor.process(crawl.text, crawl.keyword_string)
+        score, entities, categories = self.processor.process(crawl.text, crawl.keyword_string, keyword.language)
 
         entities_formatted = []
         for entity in entities:
@@ -73,7 +73,7 @@ class Controller():
         self.mongo_controller.set_entities_crawl(crawl._id, entities_formatted)
         self.mongo_controller.set_categories_crawl(crawl._id, categories_formatted)
 
-        if score:
+        if score is not None:
             return self.mongo_controller.set_score_crawl(crawl._id, score)
         return None
 

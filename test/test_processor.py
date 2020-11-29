@@ -4,9 +4,9 @@ This module tests all relevant functionality of the processor
 
 import unittest
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
-from processor import GoogleCloudLanguageProcessor
+from processor import GoogleCloudLanguageProcessor, VADER_SUPPORTED_LANGUAGES
 
 class GoogleCloudClientMock():
     """
@@ -22,10 +22,10 @@ class GoogleCloudClientMock():
         self.sentiment_document_object = SentimentDocument(1)
 
         # Entity default response
-        self.entities = [Entity('test')]
+        self.entities = [Entity("test")]
 
         # Category default response
-        self.categories = ['/test']
+        self.categories = ["/test"]
 
     """
     These response fixtures are declared as function so that you only
@@ -101,7 +101,7 @@ class TestGoogleCloudLanguageProcessor(unittest.TestCase):
         self.processor = GoogleCloudLanguageProcessor()
 
     def mock_google_cloud_client(self):
-        self.google_cloud_mock = patch('processor.language.LanguageServiceClient', return_value=self.google_cloud_client_mock_object)
+        self.google_cloud_mock = patch("processor.language.LanguageServiceClient", return_value=self.google_cloud_client_mock_object)
         self.google_cloud_mock.start()
 
     def test_construction(self):
@@ -113,53 +113,61 @@ class TestGoogleCloudLanguageProcessor(unittest.TestCase):
         self.assertIsNotNone(client)
 
     def test_entity_filter_passing(self):
-        entity = Entity('test')
+        entity = Entity("test")
         self.processor.entity_blacklist = [] # Remove any potentially blacklisted entities
 
-        result = self.processor.entity_filter(entity, 'keyword')
-        self.assertFalse(result, 'Entity should have not been filtered')
+        result = self.processor.entity_filter(entity, "keyword")
+        self.assertFalse(result, "Entity should have not been filtered")
 
     def test_entity_filter_name(self):
-        name = 'some name'
+        name = "some name"
         entity = Entity(name)
         self.processor.entity_blacklist = [] # Remove any potentially blacklisted entities
 
         result = self.processor.entity_filter(entity, name)
-        self.assertTrue(result, 'Entity should have been filtered')
+        self.assertTrue(result, "Entity should have been filtered")
 
     def test_entity_filter_blacklist(self):
-        entity_blacklisted = Entity('test')
+        entity_blacklisted = Entity("test")
         self.processor.entity_blacklist = [entity_blacklisted.name]
 
-        result = self.processor.entity_filter(entity_blacklisted, 'keyword')
-        self.assertTrue(result, 'Entity should have been filtered')
+        result = self.processor.entity_filter(entity_blacklisted, "keyword")
+        self.assertTrue(result, "Entity should have been filtered")
 
     def test_entity_filter_entity_length(self):
-        entity = Entity('t')
-        self.assertEqual(len(entity.name), 1, 'Make sure the entities name is of length 1')
+        entity = Entity("t")
+        self.assertEqual(len(entity.name), 1, "Make sure the entities name is of length 1")
         self.processor.entity_blacklist = [] # Remove any potentially blacklisted entities
 
-        result = self.processor.entity_filter(entity, 'keyword')
-        self.assertTrue(result, 'Entity should have been filtered')
+        result = self.processor.entity_filter(entity, "keyword")
+        self.assertTrue(result, "Entity should have been filtered")
 
     def test_process_passing(self):
-        result = self.processor.process('some text', 'keyword')
-        self.assertIsNotNone(result, 'The function should have returned something')
+        result = self.processor.process("some text", "keyword", "zh")
+        self.assertIsNotNone(result, "The function should have returned something")
 
     def test_process_results_not_none(self):
-        score, entities, categories = self.processor.process('some text', 'keyword')
+        score, entities, categories = self.processor.process("some text", "keyword", "zh")
 
-        self.assertIsNotNone(score, 'There should be a score')
-        self.assertIsNotNone(entities, 'There should be entities')
-        self.assertIsNotNone(categories, 'There should be categories')
+        self.assertIsNotNone(score, "There should be a score")
+        self.assertIsNotNone(entities, "There should be entities")
+        self.assertIsNotNone(categories, "There should be categories")
 
     def test_process_results_content(self):
         score_expected = self.google_cloud_client_mock_object.sentiment_document_object.score
         entities_expected = self.google_cloud_client_mock_object.entities
         categories_expected = self.google_cloud_client_mock_object.categories
 
-        score, entities, categories = self.processor.process('some text', 'keyword')
+        score, entities, categories = self.processor.process("some text", "keyword", "zh")
 
         self.assertEqual(score, score_expected)
         self.assertEqual(entities, entities_expected)
         self.assertEqual(categories, categories_expected)
+
+    @patch("processor.SentimentIntensityAnalyzer.polarity_scores", mock=MagicMock(return_value={ "compound": 15 }))
+    def test_process_vader_used(self, mock):
+        language = VADER_SUPPORTED_LANGUAGES[0]
+        
+        self.processor.process("some text", "keyword", language)
+
+        self.assertTrue(mock.called)

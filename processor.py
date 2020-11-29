@@ -5,9 +5,12 @@ This module provides the processor to process gathered data using googles NLP
 import re
 
 from google.cloud import language
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from common.utils.logging import DEFAULT_LOGGER, LogTypes
 from common.utils.read_json import read_json
+
+VADER_SUPPORTED_LANGUAGES = ["en"]
 
 class GoogleCloudLanguageProcessor:
     """
@@ -25,6 +28,7 @@ class GoogleCloudLanguageProcessor:
         Establish a connection to the Google Cloud Language API Server
         """
         self.client = language.LanguageServiceClient()
+        self.vader_analyzer = SentimentIntensityAnalyzer()
         DEFAULT_LOGGER.log('Connected to Google Cloud Language API', log_type=LogTypes.INFO.value)
 
     def entity_filter(self, entity, keyword_string):
@@ -64,12 +68,9 @@ class GoogleCloudLanguageProcessor:
                 entities_filtered.append(entity)
         return entities_filtered
 
-    def process(self, text, keyword_string):
+    def process(self, text: str, keyword_string: str, keyword_language: str):
         """
         Analyze given text and return the score returned by the API
-
-        :param str text: The text to analyze
-        :param str keyword_string: The target keyword_string
 
         :return: Score, entities and categories
         :rtype: Tuple with 3 slots
@@ -86,10 +87,13 @@ class GoogleCloudLanguageProcessor:
         # Requests
         DEFAULT_LOGGER.log('Analyzing text: {}'.format(text), log_type=LogTypes.INFO.value)
         try: # Get the sentiment of the text
-            document_sentiment = self.client.analyze_sentiment(document=document).document_sentiment
+            if keyword_language in VADER_SUPPORTED_LANGUAGES:
+                score = self.vader_analyzer.polarity_scores("this is a very positive sentence PogU")["compound"]
+            else:
+                score = self.client.analyze_sentiment(document=document).document_sentiment.score
         except Exception as ex: # If it fails make document sentiment None
             DEFAULT_LOGGER.log('Failed to get sentiment of {}'.format(keyword_string), LogTypes.ERROR.value, ex)
-            document_sentiment = None
+            score = None
 
         try: # Get all entities of the text
             entities = self.client.analyze_entity_sentiment(document=document).entities
@@ -103,10 +107,5 @@ class GoogleCloudLanguageProcessor:
         except Exception as ex: # If it fails make categories an empty list
             DEFAULT_LOGGER.log('Failed to get categories for {}'.format(keyword_string), LogTypes.ERROR.value, ex)
             categories = []
-
-        try: # Since document_sentiment might be None we need another check here
-            score = document_sentiment.score # By default take the general text setiment score
-        except:
-            score = None
         
         return (score, entities, categories)
