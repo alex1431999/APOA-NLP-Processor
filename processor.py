@@ -6,11 +6,12 @@ import re
 
 from google.cloud import language
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from VaderGerman.vaderSentimentGerman.vaderSentimentGER import SentimentIntensityAnalyzer as SentimentIntensityAnalyzerGerman
 
 from common.utils.logging import DEFAULT_LOGGER, LogTypes
 from common.utils.read_json import read_json
 
-VADER_SUPPORTED_LANGUAGES = ["en"]
+VADER_SUPPORTED_LANGUAGES = ["en", "de"]
 
 class GoogleCloudLanguageProcessor:
     """
@@ -29,6 +30,7 @@ class GoogleCloudLanguageProcessor:
         """
         self.client = language.LanguageServiceClient()
         self.vader_analyzer = SentimentIntensityAnalyzer()
+        self.vader_analyzer_german = SentimentIntensityAnalyzerGerman()
         DEFAULT_LOGGER.log('Connected to Google Cloud Language API', log_type=LogTypes.INFO.value)
 
     def entity_filter(self, entity, keyword_string):
@@ -88,7 +90,11 @@ class GoogleCloudLanguageProcessor:
         DEFAULT_LOGGER.log('Analyzing text: {}'.format(text), log_type=LogTypes.INFO.value)
         try: # Get the sentiment of the text
             if keyword_language in VADER_SUPPORTED_LANGUAGES:
-                score = self.vader_analyzer.polarity_scores("this is a very positive sentence PogU")["compound"]
+                if keyword_language == "de":
+                    score = self.vader_analyzer_german.polarity_scores(text)["compound"]
+                    print(score)
+                else:
+                    score = self.vader_analyzer.polarity_scores(text)["compound"]
             else:
                 score = self.client.analyze_sentiment(document=document).document_sentiment.score
         except Exception as ex: # If it fails make document sentiment None

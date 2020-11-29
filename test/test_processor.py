@@ -171,3 +171,11 @@ class TestGoogleCloudLanguageProcessor(unittest.TestCase):
         self.processor.process("some text", "keyword", language)
 
         self.assertTrue(mock.called)
+
+    @patch("processor.SentimentIntensityAnalyzerGerman.polarity_scores", mock=MagicMock(return_value={"compound": 15}))
+    def test_process_vader_used_german(self, mock):
+        language = "de"
+
+        self.processor.process("some text", "keyword", language)
+
+        self.assertTrue(mock.called)
